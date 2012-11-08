@@ -40,12 +40,12 @@ OFLAGS = -ggdb
 #Murphi options
 MURPHIOPTS = -b -c
 
-all: protocolV0  protocolV0.cache  protocolV0.disk 
+all: protocolV0.model  protocolV0.cache  protocolV0.disk 
 splitfile: protocolV0.cache.splitfile  protocolV0.disk.splitfile  
 
 # rules for compiling
-protocolV0: protocolV0.cpp
-	${CXX} ${CFLAGS} ${OFLAGS} -o protocolV0 protocolV0.cpp -I${INCLUDEPATH} -lm
+protocolV0.model: protocolV0.cpp
+	${CXX} ${CFLAGS} ${OFLAGS} -o protocolV0.model protocolV0.cpp -I${INCLUDEPATH} -lm
 
 
 
@@ -86,4 +86,4 @@ protocolV0.disk.cpp: protocolV0.m
 
 
 clean:
-	rm -f *.cpp protocolV0  protocolV0.cache  protocolV0.disk  protocolV0.cache.splitfile  protocolV0.disk.splitfile  
+	rm -f *.cpp protocolV0.model  protocolV0.cache  protocolV0.disk  protocolV0.cache.splitfile  protocolV0.disk.splitfile  
