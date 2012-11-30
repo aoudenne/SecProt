@@ -1,0 +1,110 @@
+==========================================================================
+Caching Murphi Release 5.4.9
+Finite-state Concurrent System Verifier.
+
+Caching Murphi Release 5.4.9 is based on various versions of Murphi.
+Caching Murphi Release 5.4.9 :
+Copyright (C) 2009-2012 by Sapienza University of Rome.
+Murphi release 3.1 :
+Copyright (C) 1992 - 1999 by the Board of Trustees of
+Leland Stanford Junior University.
+
+==========================================================================
+
+Protocol: protocolV2
+
+Algorithm:
+        Verification by breadth first search.
+        with symmetry algorithm 3 -- Heuristic Small Memory Normalization
+        with permutation trial limit 10.
+
+Memory usage:
+
+        * The size of each state is 167 bits (rounded up to 24 bytes).
+        * Capacity in queue for breadth-first search:
+          -70175 checked (old) states.
+          -70175 unchecked (new) states.
+          -701749 states in the new state buffer.
+           * Change the constant gPercentActiveStates in mu_prolog.inc
+             to increase this, if necessary.
+
+Progress Report:
+
+
+---- begin bfs level 1. 
+
+---- begin bfs level 2. 
+
+The following is the error trace for the error:
+
+        Invariant "initator correctly authenticated" failed.
+
+Startstate Startstate 0 fired.
+ini[InitiatorId_1].state:I_SLEEP
+ini[InitiatorId_1].responder:InitiatorId_1
+ini[InitiatorId_1].secretKey:InitiatorId_1
+res[ResponderId_1].state:R_SLEEP
+res[ResponderId_1].initiator:ResponderId_1
+res[ResponderId_1].secretKey:ResponderId_1
+int[IntruderId_1].nonces[InitiatorId_1]:Undefined
+int[IntruderId_1].nonces[ResponderId_1]:Undefined
+int[IntruderId_1].nonces[IntruderId_1]:Undefined
+int[IntruderId_1].keys[InitiatorId_1]:false
+int[IntruderId_1].keys[ResponderId_1]:false
+int[IntruderId_1].keys[IntruderId_1]:true
+
+----------
+
+Rule intruder generates new message, l:InitiatorId_1, m:M_KeyAddressE, k:IntruderId_1, j:ResponderId_1, i:IntruderId_1 fired.
+net{0}.source:IntruderId_1
+net{0}.dest:ResponderId_1
+net{0}.msgKey:ResponderId_1
+net{0}.secretKey:IntruderId_1
+net{0}.senderE:InitiatorId_1
+net{0}.mType:M_KeyAddressE
+----------
+
+Rule responder reacts to initiator's secret key, j:0, i:ResponderId_1 fired.
+The last state of the trace (in full) is:
+net{0}.source:ResponderId_1
+net{0}.dest:InitiatorId_1
+net{0}.msgKey:InitiatorId_1
+net{0}.secretKey:IntruderId_1
+net{0}.senderE:ResponderId_1
+net{0}.mType:M_KeyAddressE
+ini[InitiatorId_1].state:I_SLEEP
+ini[InitiatorId_1].responder:InitiatorId_1
+ini[InitiatorId_1].secretKey:InitiatorId_1
+res[ResponderId_1].state:R_COMMIT
+res[ResponderId_1].initiator:InitiatorId_1
+res[ResponderId_1].secretKey:IntruderId_1
+int[IntruderId_1].nonces[InitiatorId_1]:Undefined
+int[IntruderId_1].nonces[ResponderId_1]:Undefined
+int[IntruderId_1].nonces[IntruderId_1]:Undefined
+int[IntruderId_1].keys[InitiatorId_1]:false
+int[IntruderId_1].keys[ResponderId_1]:false
+int[IntruderId_1].keys[IntruderId_1]:true
+----------
+
+End of the error trace.
+
+==========================================================================
+
+Result:
+
+        Invariant "initator correctly authenticated" failed.
+
+State Space Explored:
+
+        9 states, 9 rules fired in 0.10s.
+        Clock time elapsed (includes disk accesses): 0.00s.
+        Levels Explored: 1
+
+Analysis of State Space:
+
+        There are rules that are never fired.
+        If you are running with symmetry, this may be why.  Otherwise,
+        please run this program with "-pr" for the rules information.
+        The maximum size for the multiset "net" is: 1.
+        The maximum size for the multiset "int[IntruderId_1].messages" is: 0.
+
