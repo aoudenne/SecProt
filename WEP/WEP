@@ -5,12 +5,10 @@ pred c(any_type) [decompData, elimVar].
 type symKey.
 type principal.
 type initVector.
-type aMessage.
 
 fun rc4(initVector, symKey):bitstring.
 fun checkSum(bitstring):bitstring.
 fun xor(bitstring, bitstring):bitstring.
-fun msgWrapper(initVector, bitstring):aMessage.
 
 name A:principal.
 name B:principal.
@@ -18,14 +16,14 @@ name Kab:symKey.
 name v:initVector.
 name m:bitstring.
 name m2:bitstring.
+name secret:bitstring.
 
 (*
 query c((m[],checkSum(m[]))).
 query c((m2[],checkSum(m2[]))).
 query c(xor((m[],checkSum(m[])),(m2[],checkSum(m2[])))).
 *)
-query c((m[],checkSum(m[]))).
-query c(xor((m[],checkSum(m[])),(m[],checkSum(m[])))).
+query c(secret[]).
 
 (*let's not worry about nots right now*)
 
@@ -46,7 +44,8 @@ forall p:principal; c(v[A[], p]);
 forall p:principal; c( xor ((m[], checkSum(m[])), rc4(v[A[], p], Kab[]))).
 *)
 forall p:principal; c(v[]);
-forall p:principal; c( xor ((m[], checkSum(m[])), rc4(v[], Kab[]))).
+forall p:principal, q:principal; c(xor((m[p],checkSum(m[p])),(m[q],checkSum(m[q])))) & p <> q -> c(secret[]);
+forall p:principal; c( xor ((m[p], checkSum(m[p])), rc4(v[], Kab[]))).
 (*
 c(v[]);
 c(xor ((m[], checkSum(m[])), rc4(v[], Kab[])));
