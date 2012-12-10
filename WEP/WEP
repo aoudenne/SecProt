@@ -17,7 +17,7 @@ name v:initVector.
 name m:bitstring.
 
 
-query c(m[])
+query c(m[]).
 
 (*let's not worry about nots right now*)
 
@@ -25,3 +25,10 @@ clauses
 
 (* The Attacker *)
 forall vec:initVector, sKey:symKeys
+forall x:any_type, y:any_type; c(xor(x,y)) & c(x) -> c(y);
+forall x:any_type, y:any_type; c(xor(x,y)) & c(y) -> c(x);
+
+(* A *)
+forall p:principal; c(v[A, p], xor ((m[A, p], C(m[A, p])), rc4(v[A, p], Kab)));
+
+(* B *)
