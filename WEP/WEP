@@ -1,0 +1,27 @@
+(* Making cool protocol of WEP *)
+
+pred c(any_type) [decompData, elimVar].
+
+type symKey.
+type principal.
+type initVector.
+
+fun rc4(initVector, symKey).
+fun checkSum(bitstring).
+fun xor(any_type, any_type).
+
+name A:principal.
+name B:principal.
+name Kab:symKey.
+name v:initVector.
+name m:bitstring.
+
+
+query c(m[])
+
+(*let's not worry about nots right now*)
+
+clauses
+
+(* The Attacker *)
+forall vec:initVector, sKey:symKeys
