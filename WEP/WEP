@@ -5,30 +5,50 @@ pred c(any_type) [decompData, elimVar].
 type symKey.
 type principal.
 type initVector.
+type aMessage.
 
-fun rc4(initVector, symKey).
-fun checkSum(bitstring).
-fun xor(any_type, any_type).
+fun rc4(initVector, symKey):bitstring.
+fun checkSum(bitstring):bitstring.
+fun xor(bitstring, bitstring):bitstring.
+fun msgWrapper(initVector, bitstring):aMessage.
 
 name A:principal.
 name B:principal.
 name Kab:symKey.
 name v:initVector.
 name m:bitstring.
+name m2:bitstring.
 
-
-query c(m[]).
+(*
+query c((m[],checkSum(m[]))).
+query c((m2[],checkSum(m2[]))).
+query c(xor((m[],checkSum(m[])),(m2[],checkSum(m2[])))).
+*)
+query c((m[],checkSum(m[]))).
+query c(xor((m[],checkSum(m[])),(m[],checkSum(m[])))).
 
 (*let's not worry about nots right now*)
 
 clauses
 
 (* The Attacker *)
-forall vec:initVector, sKey:symKeys
-forall x:any_type, y:any_type; c(xor(x,y)) & c(x) -> c(y);
-forall x:any_type, y:any_type; c(xor(x,y)) & c(y) -> c(x);
-
+(*forall vec:initVector, sKey:symKeys*)
+forall x:bitstring, y:bitstring; c(xor(x,y)) -> c(xor(y,x));
+forall x:bitstring, y:bitstring; c(xor(x,y)) & c(x) -> c(y);
+forall x:bitstring, y:bitstring; c(xor(x,y)) & c(y) -> c(x);
+forall x:bitstring, y:bitstring; c(x) & c(y) -> c(xor(x,y));
+forall x:bitstring, y:bitstring, z:bitstring; c(xor(xor(x,y),xor(z,y))) -> c(xor(x,z));
+forall x:bitstring; c((x,checkSum(x))) -> c(x);
+forall x:bitstring; c((x,checkSum(x))) -> c(checkSum(x));
 (* A *)
-forall p:principal; c(v[A, p], xor ((m[A, p], C(m[A, p])), rc4(v[A, p], Kab)));
-
+(*
+forall p:principal; c(v[A[], p]);
+forall p:principal; c( xor ((m[], checkSum(m[])), rc4(v[A[], p], Kab[]))).
+*)
+forall p:principal; c(v[]);
+forall p:principal; c( xor ((m[], checkSum(m[])), rc4(v[], Kab[]))).
+(*
+c(v[]);
+c(xor ((m[], checkSum(m[])), rc4(v[], Kab[])));
+c(xor ((m2[], checkSum(m2[])), rc4(v[], Kab[]))).*)
 (* B *)
