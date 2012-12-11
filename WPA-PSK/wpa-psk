@@ -10,7 +10,9 @@ MIC: Message Integrity Code
 IE: RSN Information Element, carries listof auth and cipher selector fields for communications on RSN-capable stations
 
 1) B->A NonceB
-2) A->B 
+2) A->B NonceA, MIC //B can now compute PTK
+3) B->A GTK, MIC   //Group transient key, A can now compute PTK
+4) A->B ACK, MIC  //just an aacknowledgement, on wikipedia the MIC isn't mentioned 
 
 *)
 pred c(any_type) [decompData, elimVar].
