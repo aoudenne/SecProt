@@ -1,0 +1,16 @@
+(* WPA-PSK 4-way handshake protocol *)
+
+(* Description of the protocol
+Goal: Verify that A knows the pre-shared key, aka the pairwise master key (PMK)
+Goal: Establish a pairwise transient key (PTK)
+Ultimate Goal: Create a PTK between A & B without revealing PMK
+A: Supplicant or Wireless Station (STA in paper)
+B: Access Point (AP in paper)
+MIC: Message Integrity Code
+IE: RSN Information Element, carries listof auth and cipher selector fields for communications on RSN-capable stations
+
+1) B->A NonceB
+2) A->B 
+
+*)
+pred c(any_type) [decompData, elimVar].
