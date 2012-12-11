@@ -19,19 +19,28 @@ pred c(any_type) [decompData, elimVar].
 
 type principal.
 type pairwiseMasterKey.
-type nonce.
+
 type pairwiseTransientKey.
 
 
 
-fun makePtk(nonce, nonce, principal, principal, pairwiseMasterKey): pairwiseTransientKey.
-
+fun makePtk(bitstring, bitstring, principal, principal, pairwiseMasterKey): pairwiseTransientKey.
+fun mic(bitstring, bitstring):bitstring;
 
 
 name PMK:pairwiseMasterKey;
-
+name nAP:bitstring;
+name nSTA:bitstring;
+name STA:principal;
+name AP:principal;
 
 query c(secret[]).
 
 clauses
 (* The attacker can make ptks and put shit on the channel *)
+
+(* AP *)
+forall p:principal; c(nAP[p], AP);
+
+(* STA *)
+forall p:principal; c(nAP[STA],AP)-> c(

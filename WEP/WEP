@@ -50,4 +50,3 @@ forall p:principal; c( xor ((m[p], checkSum(m[p])), rc4(v[], Kab[]))).
 c(v[]);
 c(xor ((m[], checkSum(m[])), rc4(v[], Kab[])));
 c(xor ((m2[], checkSum(m2[])), rc4(v[], Kab[]))).*)
-(* B *)
