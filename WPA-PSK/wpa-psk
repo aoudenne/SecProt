@@ -18,29 +18,43 @@ IE: RSN Information Element, carries listof auth and cipher selector fields for 
 pred c(any_type) [decompData, elimVar].
 
 type principal.
-type pairwiseMasterKey.
-
-type pairwiseTransientKey.
 
 
+fun makePTK(bitstring, bitstring, principal, principal, bitstring): bitstring.
+fun mic(bitstring, bitstring):bitstring.
+fun encrypt(bitstring, bitstring):bitstring.
 
-fun makePtk(bitstring, bitstring, principal, principal, pairwiseMasterKey): pairwiseTransientKey.
-fun mic(bitstring, bitstring):bitstring;
 
-
-name PMK:pairwiseMasterKey;
-name nAP:bitstring;
-name nSTA:bitstring;
-name STA:principal;
-name AP:principal;
+name PMK:bitstring.
+name GTK:bitstring.
+name nAP:bitstring.
+name nSTA:bitstring.
+name STA:principal.
+name AP:principal.
+name secret:bitstring.
 
 query c(secret[]).
 
 clauses
 (* The attacker can make ptks and put shit on the channel *)
+forall p:principal; c((nAP[p], p))-> c(nAP[p]);
+forall p:principal; c((nAP[p],p))-> c(p);
+forall b:bitstring, d:bitstring; c((b,d)) -> c(b);
+forall b:bitstring, d:bitstring; c((b,d)) -> c(d);
+forall p:principal; c(p) & c(nAP[p]) -> c((nAP[p], p));
+forall b:bitstring, d:bitstring; c(b) & c(d) -> c((b,d));
+forall nap:bitstring, nsta:bitstring, p:principal, q:principal, key:bitstring; c((makePTK(nap, nsta, p, q, key)));
+forall ptkKey:bitstring, p:principal, q:principal; c(ptkKey) -> c((mic(nSTA[p, q], ptkKey)));
+forall micString:bitstring, p:principal, q:principal; c(micString)->c((nSTA[p,q], micString));
+(*forall p:principal;, q:principal((nSTA[q, p], mic(nSTA[q, p], makePTK(nAP[q], nSTA[q,p], p, q, PMK[]))))->
+*)
+
 
 (* AP *)
-forall p:principal; c(nAP[p], AP);
+forall p:principal; c((nAP[p], AP[]));
+forall p:principal; c((nSTA[p, AP[]], mic(nSTA[p, AP[]], makePTK(nAP[p], nSTA[p,AP[]], AP[], p, PMK[])))) 
+    -> c(encrypt(GTK[], makePTK(nAP[p], nSTA[p,AP[]], AP[], p, PMK[])));
 
 (* STA *)
-forall p:principal; c(nAP[STA],AP)-> c(
+forall p:principal; c((nAP[STA[]],p))-> c((nSTA[STA[], p], mic(nSTA[STA[], p], makePTK(nAP[STA[]], nSTA[STA[],p], p, STA[], PMK[]))));
+c(PMK[])->c(secret[]).
