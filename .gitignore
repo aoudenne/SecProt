@@ -4,3 +4,9 @@
 .*
 *.cache
 *.model
+*.bbl
+*.aux
+*.blg
+*.log
+*.synctex
+*.synctex.gz
