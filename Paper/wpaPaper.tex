@@ -52,16 +52,14 @@ Interesting yet vague things about our paper.
 \section{Related Work}
 
 \section{Modeling of Protocols}
-\subsection{Protocol Structures}
+\subsection{Protocol Descriptions}
 \subsubsection{WEP}
 WEP, described in \cite{borisov01}, uses a one-message protocol to transmit data between two parties that relies on a secret key \textit{k} that has been shared between them.  Before a message is sent, an integrity checksum \textit{C(m)} is computed on the message so that the recipient can verify that the message has not been altered in transit.  The message is concatenated to this checksum to form the plaintext \textit{P}.
 
 The plaintext is now encrypted using the RC4 cipher.  The sender chooses an initialization vector IV and uses this vector along with the secret key \textit{k} to generate a keystream, which is a long sequence of pseudorandom bits.  The sender then uses exclusive-or (or XOR, denoted by $\oplus$) to XOR \textit{P} and the keystream to generate ciphertext \textit{C}.  The complete encryption process can be represented by: 
 $$C = P \oplus RC4(IV, k)$$
-
 The message is then ready to be transmitted from the sender to the receiver.  We will represent this transmission symbolically as:
 $$A \rightarrow B: IV, (P \oplus RC4(IV, k)), where P = \langle m, C(m) \rangle$$ 
-
 Notice that the initialization vector \textit{IV} is sent in the clear, meaning that anyone can read the value of the initialization vector.  This should not matter because an attacker would need boh the \textit{IV} and the secret key \textit{k} to recover the keystream used to decrypt the message, but we will show later in this paper that this is enough to break WEP.
 
 Decryption works by reversing the encryption process described above.  The recipient first regenerates the keystream used to encode the message with the secret key \textit{k} and the \textit{IV} sent along with the encrypted message.  He can XOR the ciphertext with the keystream to recover the plaintext \textit{P}:
@@ -75,8 +73,18 @@ The recipient can then verify the integrity of the message by splitting \textit{
 
 \subsubsection{WPA/WPA2 Four-Way Handshake}
 The Four-Way Handshake protocol is used in both WPA and WPA2 to authenticate a station to an access point, to compute a pairwise transient key (PTK) to be used in future communication between these parties, and to distribute a group transient key (GTK) to be used by the station to communicate with other devices connected to the access point \cite{liu08}.  
+
+TO-DO:Finsih this part
+
 \subsection{ProVerif}
-\subsection{Attacker Model}
+To formally prove the correctness of WEP and the Four-Way Handshake, we use the ProVerif Cryptographic Verifier created by Bruno Blanchet.  ProVerif uses prolog rules to encode the protocol and abstracts away fresh values and the number of steps in the protocol \cite{blanchet01}.  Instead, Proverif treats each fresh value as a function of other messages in the protocol, meaning that different values are used for each pair of protocol participants.  Each step in the protocol can be completed any number of times, and past steps can be re-executed arbitrarily.  This permits ProVerif to execute an unlimited number of runs of a protocol.  A protocol is proved to be secure by querying ProVerif whether an attacker knows a key or the content of some encrypted message. Since we assume that messages are placed on a channel \textit{c}, and that the attacker has access to all messages on \textit{c}, security is proved if the attacker cannot learn the security property despite access to all the messages. This verifier has been used to successfully prove the insecurity of protocols such as the Diffe-Hellman key exchange protocol, Initial Key Agreement, and the Needham-Schroeder symmetric-key protocol \cite{lafourcade10, abadi}.
+
+\subsubsection{Horn Clauses}
+ProVerif can take protocols in either horn clauses or pi-calculus.  In our protocol implementations, we chose to use typed horn clauses.  An untyped horn clause is a disjunction of literals with at most one positive literal (ex. $ \neg p \lor \neg q \lor t$) \cite{blanchet09}.  They can be written as implications (ex. $(p \land q ) \rightarrow t$), as they are in Prolog, on which ProVerif is based. Typed horn clauses merely allow the user to add a type system to the program for clarity, but the underlying logic is the same as that of untyped horn clauses.
+
+\subsubsection{Attacker Model}
+In ProVerif, it is not necessary to explicitly model the attacker.  Rather, the user constructs a list of clauses detailing what anyone, including the attacker, can do with messages that are put on the channel \textit{c}.  Such abilities include separating a message $c(a,b)$ into its separate parts and placing those parts on the channel ($(c(a)$, $c(b)$), decrypting messages if the encryption key of the message is known, encrypting messages using a known key, XOR-ing messages, and computing checksums of messages.  We use the Dolev-Yao attacker model, in which the attacker can intercept, overhear, and create new messages, since this corresponds closely to the capabilities a WEP or Four-Way Handshake protocol attacker would have.
+
 \subsection{Modeling Security Properties}
 
 \section{Analysis of Protocol Models}
