@@ -58,5 +58,5 @@ forall p:principal; c((nSTA[p, AP[]], mic(nSTA[p, AP[]], makePTK(nAP[p], nSTA[p,
 (* STA *)
 forall p:principal; c((nAP[STA[]],p))-> c((nSTA[STA[], p], mic(nSTA[STA[], p], makePTK(nAP[STA[]], nSTA[STA[],p], p, STA[], PMK[]))));
 
-forall p:principal, q:principal, nap:bitstring, nsta:bistring, natt:bitstring; c(makePTK(nap,nsta,p,q,PMK[])) & c(makePTK(natt,nsta,p,q,PMK[])) & nap != natt -> c(dos[]).
+forall p:principal, q:principal, nap:bitstring, nsta:bitstring, natt:bitstring; c(makePTK(nap,nsta,p,q,PMK[])) & c(makePTK(natt,nsta,p,q,PMK[])) & nap <> natt -> c(dos[]).
 (* two ptks generated with different nonces - inconsistent ptks, implies denial of service to AP *)
