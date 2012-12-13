@@ -18,12 +18,18 @@ IE: RSN Information Element, carries listof auth and cipher selector fields for 
 pred c(any_type) [decompData, elimVar].
 
 type principal.
-
+type message.
+type invariant.
 
 fun makePTK(bitstring, bitstring, principal, principal, bitstring): bitstring.
 fun mic(bitstring, bitstring):bitstring.
 fun encrypt(bitstring, bitstring):bitstring.
 fun attackerNonce(bitstring):bitstring.
+
+fun msg1(bitstring,principal):message. (* msg1(nonceAP, AP) *)
+fun msg2(bitstring, bitstring):message. (* msg2 (nonceSTA, MIC(nonceSTA)) *)
+fun msg3(bitstring):message. (* msg3( encrypt(GTK, PTK) ) *)
+fun msg4(bitstring):message. (* msg4(encrypt(nSTA[STA[],AP[]], ptk) - acknowledgement and representation that AP and STA have authenticated *)
 
 name PMK:bitstring.
 name GTK:bitstring.
@@ -31,32 +37,54 @@ name nAP:bitstring.
 name nSTA:bitstring.
 name STA:principal.
 name AP:principal.
-name dos:bitstring.
+name secret:invariant.
+name dos:invariant.
+name authFail:invariant.
 
-query c(dos[]).
+query c(secret[]). (* confidentiality assertion *)
+query c(authFail[]). (* Authentication assertion 	 *)
+query c(dos[]). (* liveness assertion *)
 
 clauses
-(* The attacker can make ptks and put shit on the channel *)
-(*forall p:principal; c(nAP[p]) -> c((attackerNonce(nAP[p]),p));*)
-forall p:principal; c((nAP[p], p))-> c(nAP[p]);
-forall p:principal; c((nAP[p],p))-> c(p);
-forall b:bitstring, d:bitstring; c((b,d)) -> c(b);
-forall b:bitstring, d:bitstring; c((b,d)) -> c(d);
-forall p:principal; c(p) & c(nAP[p]) -> c((nAP[p], p));
-forall b:bitstring, d:bitstring; c(b) & c(d) -> c((b,d));
-forall nap:bitstring, nsta:bitstring, p:principal, q:principal, key:bitstring; c(key) -> c((makePTK(nap, nsta, p, q, key)));
-forall ptkKey:bitstring, p:principal, q:principal; c(ptkKey) -> c((mic(nSTA[p, q], ptkKey)));
-forall micString:bitstring, p:principal, q:principal; c(micString)->c((nSTA[p,q], micString));
+
+forall p:principal; c(nAP[p]) -> c(attackerNonce(nAP[p]));
+forall p:principal, n:bitstring; c(msg1(n,p)) -> c(n); (*attacker can see nonce and MAC addresses *)
+forall p:principal, n:bitstring; c(msg1(n,p)) -> c(p);
+forall n:bitstring, m:bitstring; c(msg2(n,m)) -> c(n); (* attacker can see nonce and MIC *)
+forall n:bitstring, m:bitstring; c(msg2(n,m)) -> c(m);
+forall g:bitstring; c(msg3(g)) -> c(g); (* attacker can see encrypted GTK *)
+forall b:bitstring; c(msg4(b)) -> c(b);
+
+
+
+forall p:principal, n:bitstring; c(p) & c(n) -> c(msg1(n,p)); (*attacker can generate fake msg1's *)
+forall n:bitstring, m:bitstring; c(n) & c(m) -> c(msg2(n,m)); (*attacker can generate fake msg2's *)
+forall g:bitstring; c(g) -> c(msg3(g)); (*attacker can generate fake msg3's *)
+forall b:bitstring; c(b) -> c(msg4(b));
+
+forall nap:bitstring, nsta:bitstring, ap:principal, sta:principal, pmk:bitstring; c(pmk) -> c(makePTK(nap,nsta,ap,sta,pmk)); (* attacker can generate any PTK if he knows the corresp. pmk *)
+forall ptk:bitstring, n:bitstring; c(ptk) -> c(mic(n,ptk)); (*attacker can generate MIC for anything given he knows the key *)
+forall thing:bitstring, key:bitstring; c(thing) & c(key) -> c(encrypt(thing,key)); (*attacker can encrypt anything for which he knows the key *)
+forall thing:bitstring, key:bitstring; c(encrypt(thing,key) ) & c(key) -> c(thing); (*attacker can decrypt anything given he knows the key *)
+
 
 
 
 (* AP *)
-forall p:principal; c((nAP[p], AP[]));
+forall p:principal; c(msg1(nAP[p], AP[]));
+forall p:principal, n:bitstring; c(msg2(n,mic(n, makePTK(nAP[p], n, AP[],p, PMK[])))) -> c(msg3(encrypt(GTK[], makePTK(nAP[p],n,AP[],p,PMK[]))));
+(*forall p:principal; c((nAP[p], AP[]));
 forall p:principal; c((nSTA[p, AP[]], mic(nSTA[p, AP[]], makePTK(nAP[p], nSTA[p,AP[]], AP[], p, PMK[])))) 
-    -> c(encrypt(GTK[], makePTK(nAP[p], nSTA[p,AP[]], AP[], p, PMK[])));
+    -> c(encrypt(GTK[], makePTK(nAP[p], nSTA[p,AP[]], AP[], p, PMK[])));*)
 
 (* STA *)
-forall p:principal; c((nAP[STA[]],p))-> c((nSTA[STA[], p], mic(nSTA[STA[], p], makePTK(nAP[STA[]], nSTA[STA[],p], p, STA[], PMK[]))));
+forall p:principal, n:bitstring; c(msg1(n,p))-> c(msg2(nSTA[STA[], p], mic(nSTA[STA[], p], makePTK(n, nSTA[STA[],p], p, STA[], PMK[]))));
+forall p:principal, n:bitstring; c(msg3(encrypt(GTK[], makePTK(n,nSTA[STA[],p],p, STA[], PMK[]) ))) -> c(msg4(encrypt(nSTA[STA[],p],makePTK(n,nSTA[STA[],p],p,STA[],PMK[]))));
 
-forall p:principal, q:principal, nap:bitstring, nsta:bitstring, natt:bitstring; c(makePTK(nap,nsta,p,q,PMK[])) & c(makePTK(natt,nsta,p,q,PMK[])) & nap <> natt -> c(dos[]).
+forall p:principal, q:principal, nap:bitstring, nsta:bitstring, natt:bitstring; c(mic(nsta,makePTK(nap,nsta,p,q,PMK[]))) & c(mic(nsta,makePTK(natt,nsta,p,q,PMK[]))) & nap <> natt -> c(dos[]);
 (* two ptks generated with different nonces - inconsistent ptks, implies denial of service to AP *)
+
+c(PMK[]) -> c(secret[]);
+forall p:principal, q:principal, n1:bitstring, n2:bitstring; c(makePTK(n1, n2, p, q, PMK[])) -> c(secret[]);
+c(GTK[]) -> c(secret[]);
+forall p:principal, q:principal, n1:bitstring, n2:bitstring; c(msg4(encrypt(nSTA[p,q],makePTK(n1,n2,p,q,PMK[])))) & p <> AP[] & q <> STA[] -> c(authFail[]). 
