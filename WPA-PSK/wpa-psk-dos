@@ -47,7 +47,7 @@ query c(dos[]). (* liveness assertion *)
 
 clauses
 
-forall p:principal; c(nAP[p]) -> c(attackerNonce(nAP[p]));
+forall p:principal; c(nAP[p]) -> c(attackerNonce(nAP[p])); (* attacker can generate fake bitstrings of any kind  - right now, only in response to AP nonce*)
 forall p:principal, n:bitstring; c(msg1(n,p)) -> c(n); (*attacker can see nonce and MAC addresses *)
 forall p:principal, n:bitstring; c(msg1(n,p)) -> c(p);
 forall n:bitstring, m:bitstring; c(msg2(n,m)) -> c(n); (* attacker can see nonce and MIC *)
