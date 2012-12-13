@@ -69,7 +69,16 @@ There has been much work, both with automatic verifiers and without, on proving 
 
 The authors also discuss the risk of message modification in WEP due to the CRC checksum being a linear function of the message, whihc means that it distributes over XOR.  An attacker can arbitrarily modify even messages he hasn't decrypted by simply XORing the ciphertext with some bitstream and the checksum of the bitstream.  Messages can be injected into a network because CRC is not dependent on the keystream used to encode a message. Once an attacker learns an initialization vector and its corresponding keystream, the keystream can be reused indefinitely to insert new messages into the network, because initialization vectors are never checked for freshness.  This also allows an attacker to authenticate himself to the network.  
 
+The security of 802.11i has also been concluded without the use of automatic verifiers.  In \cite{he05}, He and Mitchell consider each stage of the protocol and conclude its security from a number of possible threats, including malicious access points, session hijacking, eavesdropping, and message deletion.  They conclude that it provides effective confidentiality and integrity when the CCMP protocol is used, and that it may provide satisfactory mutual authentication and key management.  However, they identify several possible Denial of Service attacks, since the protocol is not designed to ensure liveness.
+
+One of these Denial of Service attacks, identified in \cite{he04} and \cite{liu08}, deals with the Four-Way Handshake protocol that is responsible for establishing the Pairwise Transient Key (PTK).  Using automatic verification tools, both groups of researchers prove that it is possible to launch a Denial of Service attack on a supplicant in which the supplicant is continually forced to regenerate a new but incorrect PTK, preventing it from ever communicating with the server.  \cite{he04} solves this problem by suggesting the reuse of the 
 Automatic verification of WEP and 802.11i has been conducted by several researchers.  This is particularly important to do because the security flaws in cryptographic protocols are often non-obvious and can rely on particular sequences of messages that isn't usually generated.  Automatic verification can explore the entire state space of a protocol and identify possible attacks.  
+
+Lafourcade et al. found an attack similar to \cite{borisov09} described above using the ProVerif Cryptographic Verifier. By placing multiple messages on the channel encrypted with the same keystream, the attacker is able to recover the contents of encrypted messages.  To prevent this attack, they then implemented a version of WEP in which all intialization vectors were guaranteed to be unique.  This protocol was considered secure by ProVerif. 
+
+802.11i has also been automatically verified, in particular by Changhua He and John C. Mitchell.  
+
+ 
 \section{Modeling of Protocols}
 \label{sec:model}
 \subsection{Protocol Descriptions}
