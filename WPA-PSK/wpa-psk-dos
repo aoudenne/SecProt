@@ -1,0 +1,62 @@
+(* WPA-PSK 4-way handshake protocol *)
+
+(* Description of the protocol
+Goal: Verify that A knows the pre-shared key, aka the pairwise master key (PMK)
+Goal: Establish a pairwise transient key (PTK)
+Ultimate Goal: Create a PTK between A & B without revealing PMK
+A: Supplicant or Wireless Station (STA in paper)
+B: Access Point (AP in paper)
+MIC: Message Integrity Code
+IE: RSN Information Element, carries listof auth and cipher selector fields for communications on RSN-capable stations
+
+1) AP->STA NonceAP
+2) STA->AP NonceSTA, MIC //STA can now compute PTK
+3) AP->STA GTK, MIC   //Group transient key, AP can now compute PTK
+4) STA->AP ACK, MIC  //just an aacknowledgement, on wikipedia the MIC isn't mentioned 
+
+*)
+pred c(any_type) [decompData, elimVar].
+
+type principal.
+
+
+fun makePTK(bitstring, bitstring, principal, principal, bitstring): bitstring.
+fun mic(bitstring, bitstring):bitstring.
+fun encrypt(bitstring, bitstring):bitstring.
+fun attackerNonce(bitstring):bitstring.
+
+name PMK:bitstring.
+name GTK:bitstring.
+name nAP:bitstring.
+name nSTA:bitstring.
+name STA:principal.
+name AP:principal.
+name dos:bitstring.
+
+query c(dos[]).
+
+clauses
+(* The attacker can make ptks and put shit on the channel *)
+(*forall p:principal; c(nAP[p]) -> c((attackerNonce(nAP[p]),p));*)
+forall p:principal; c((nAP[p], p))-> c(nAP[p]);
+forall p:principal; c((nAP[p],p))-> c(p);
+forall b:bitstring, d:bitstring; c((b,d)) -> c(b);
+forall b:bitstring, d:bitstring; c((b,d)) -> c(d);
+forall p:principal; c(p) & c(nAP[p]) -> c((nAP[p], p));
+forall b:bitstring, d:bitstring; c(b) & c(d) -> c((b,d));
+forall nap:bitstring, nsta:bitstring, p:principal, q:principal, key:bitstring; c(key) -> c((makePTK(nap, nsta, p, q, key)));
+forall ptkKey:bitstring, p:principal, q:principal; c(ptkKey) -> c((mic(nSTA[p, q], ptkKey)));
+forall micString:bitstring, p:principal, q:principal; c(micString)->c((nSTA[p,q], micString));
+
+
+
+(* AP *)
+forall p:principal; c((nAP[p], AP[]));
+forall p:principal; c((nSTA[p, AP[]], mic(nSTA[p, AP[]], makePTK(nAP[p], nSTA[p,AP[]], AP[], p, PMK[])))) 
+    -> c(encrypt(GTK[], makePTK(nAP[p], nSTA[p,AP[]], AP[], p, PMK[])));
+
+(* STA *)
+forall p:principal; c((nAP[STA[]],p))-> c((nSTA[STA[], p], mic(nSTA[STA[], p], makePTK(nAP[STA[]], nSTA[STA[],p], p, STA[], PMK[]))));
+
+forall p:principal, q:principal, nap:bitstring, nsta:bistring, natt:bitstring; c(makePTK(nap,nsta,p,q,PMK[])) & c(makePTK(natt,nsta,p,q,PMK[])) & nap != natt -> c(dos[]).
+(* two ptks generated with different nonces - inconsistent ptks, implies denial of service to AP *)
