@@ -44,27 +44,48 @@
 \begin{document}
 \maketitle
 \begin{abstract}
-Interesting yet vague things about our paper.
+Interesting vague things about our paper.
+200 words or less, and should say something like:
+In this paper, we present the WEP and WPA Four-Way Handshake protocols in detail and formally model them using the ProVerif Cryptographic Verifier. 
 \end{abstract}
 
 \section{Introduction}
+Wireless communication is a staple of 21st century daily life, and security is a serious concern for individuals, businesses, and organizations looking to communicate quickly and securely.  To ensure this, different standards have been proposed that define protocols for secure communication.  
 
+One such standard was the 802.11 standard ratified in September of 1999, which intended to provide data confidentiality through Wired Equivalent Privacy, or WEP \cite{IEEE802.11}.  WEP uses a 40- or 104-bit encryption key that is manually entered into access points and devices.  This key never changes, so if it is compromised, all future messages on the network are compromised until every device is manually rekeyed.  The intention of WEP was to provide the same level of confidentiality as that of a traditional wired network.  
+
+Unfortunately, WEP relied on the RC4 stream cipher, which was thought to be secure but which was actually vulnerable to attacks.  The Cyclic Redundancy Check (CRC) checksum algorithm used by WEP does not provide a strong enough integrity guarantee, because it permits the guessing of individual bytes of a packet \cite{bulbul08}.  Since the CRC is simple a linear function of the message, an attacker can modify an encrypted message and fix the checksum so that the message appears not to have been modified.
+
+To remedy this, IEEE released WPA in 2003 as a temporary remedy for WEP until a new standard could be ratified.  WPA was designed to work on devices that were currently using WEP until new hardware was created, so it also uses the RC4 cipher and the CRC checksum mechanism \cite{wpa03}.  However, it uses the Temporal Key Integrity Protocol, which implements a key mixing function that combines the root key with an initialization vector \textit{before} passing it to RC4, instead of just concatenating it as in WEP.  This prevents related key attacks, to which WEP is susceptible.  TKIP also enforces rekeying and sequence counters to thwart replay attacks.  It also includes an additional message integrity check called Michael that increases security.  Although WPA provides greater security than WEP, it is still susceptible to some of the same attacks as WEP, because of the insecurity of the RC4 cipher and the CRC checksum algorithm.  As a result, the 802.11i standard was ratified in June of 2004 to replace the use of the TKIP protocol (which uses RC4) with AES-based CCMP encryption\cite{IEEE802.11i}. This provides strong security for key generation.
+
+Both WPA and WPA2 rely on the computation of a secure key to encrypt data.  To avoid the insecurity of WEP (in which the means of calculating the key are sent over the network), both parties begin with the same Pairwise Master Key (PMK) and use this key to compute the Pairwise Transient Key (PTK) which is actually used to encrypt data.  Neither of these keys are ever sent over the network.  Instead, the wireless access point and the supplicant device engage in the Four-Way Handshake protocol in order to transmit the data necessary to calculate the PTK.  
+
+While the Four-Way Handshake is immune to most attacks, it is vulnerable to a Denial-of-Service (DOS) attack.  This attack prevents the station and the access point from ever fully authenticating with one another.  While an attack of this nature is not particularly devastating, in that it does not leak keys or permit the attacker to corrupt data, the availability of a network should not be influenced by an attacker.
+
+In this paper, we present the WEP and WPA Four-Way Handshake protocols in detail and formally model them using the ProVerif Cryptographic Verifier. In Section \ref{sec:Related Work}, we present work by other researchers on the security of WEP and 802.11i.  We particularly focus on the security of the Four-Way Handshake protocol.  We explain the protocols and how we model them in Section \ref{sec:model}.  We also describe ProVerif and our attacker model.  In Section \ref{sec:analysis}, we show the possible attacks on the WEP protocol and what particular aspects of the protocol lead to these attacks.  We will then explain how these aspects have been eliminated in WPA/WPA2 due to the Four-Way Handshake Protocol, and then demonstrate how a Denial-Of-Service attack is still possible.  Finally, in Section \ref{sec:conclude}, we summarize our conclusions and suggest future work that could be done on proving the correctness of wireless security.
 \section{Related Work}
+\label{sec:Related Work}
+There has been much work, both with automatic verifiers and without, on proving the insecurity of WEP.  In \cite{borisov01}, a large number of insecurities in WEP are discussed without the aid of an automatic verifier.  The authors highlight possible attacks resulting from the risk of keystream reuse, due to the fact that encrypting two messages under the same keystream can reveal information about both messages.  Since the initialization vectors used to compute the keystreams are re-initialized every time a wireless card is re-inserted into a device, there are many opportunities for an attack of this nature.  
 
+The authors also discuss the risk of message modification in WEP due to the CRC checksum being a linear function of the message, whihc means that it distributes over XOR.  An attacker can arbitrarily modify even messages he hasn't decrypted by simply XORing the ciphertext with some bitstream and the checksum of the bitstream.  Messages can be injected into a network because CRC is not dependent on the keystream used to encode a message. Once an attacker learns an initialization vector and its corresponding keystream, the keystream can be reused indefinitely to insert new messages into the network, because initialization vectors are never checked for freshness.  This also allows an attacker to authenticate himself to the network.  
+
+Automatic verification of WEP and 802.11i has been conducted by several researchers.  This is particularly important to do because the security flaws in cryptographic protocols are often non-obvious and can rely on particular sequences of messages that isn't usually generated.  Automatic verification can explore the entire state space of a protocol and identify possible attacks.  
 \section{Modeling of Protocols}
+\label{sec:model}
 \subsection{Protocol Descriptions}
 \subsubsection{WEP}
-WEP, described in \cite{borisov01}, uses a one-message protocol to transmit data between two parties that relies on a secret key \textit{k} that has been shared between them.  Before a message is sent, an integrity checksum \textit{C(m)} is computed on the message so that the recipient can verify that the message has not been altered in transit.  The message is concatenated to this checksum to form the plaintext \textit{P}.
+WEP, described in \cite{borisov01}, uses a one-message protocol to transmit data between two parties that relies on a secret key \textit{k} that has been shared between them.  The intention of this protocol is to provide the same confidentiality as that of a wired network \cite{IEEE802.11}.  Before a message is sent, an integrity checksum \textit{C(m)} is computed on the message so that the recipient can verify that the message has not been altered in transit.  The message is concatenated to this checksum to form the plaintext \textit{P}.
 
 The plaintext is now encrypted using the RC4 cipher.  The sender chooses an initialization vector IV and uses this vector along with the secret key \textit{k} to generate a keystream, which is a long sequence of pseudorandom bits.  The sender then uses exclusive-or (or XOR, denoted by $\oplus$) to XOR \textit{P} and the keystream to generate ciphertext \textit{C}.  The complete encryption process can be represented by: 
 $$C = P \oplus RC4(IV, k)$$
 The message is then ready to be transmitted from the sender to the receiver.  We will represent this transmission symbolically as:
-$$A \rightarrow B: IV, (P \oplus RC4(IV, k)), where P = \langle m, C(m) \rangle$$ 
+$$A \rightarrow B: IV, (P \oplus RC4(IV, k)),$$
+$$ \text{where} P = \langle m, C(m) \rangle$$ 
+
 Notice that the initialization vector \textit{IV} is sent in the clear, meaning that anyone can read the value of the initialization vector.  This should not matter because an attacker would need boh the \textit{IV} and the secret key \textit{k} to recover the keystream used to decrypt the message, but we will show later in this paper that this is enough to break WEP.
 
 Decryption works by reversing the encryption process described above.  The recipient first regenerates the keystream used to encode the message with the secret key \textit{k} and the \textit{IV} sent along with the encrypted message.  He can XOR the ciphertext with the keystream to recover the plaintext \textit{P}:
 \begin{align*}
-\label{}
 P &= C \oplus RC4(IV, k)\\
 \nonumber &= (P \oplus RC4(IV, k)) \oplus RC4(IV, k)\\
 \nonumber &= P
@@ -72,9 +93,9 @@ P &= C \oplus RC4(IV, k)\\
 The recipient can then verify the integrity of the message by splitting \textit{P} into $\langle m, C(m) \rangle$ and recomputing the checksum of \textit{m}.  If the computed checksum matches the sent checksum, then the message has not been tampered with.  
 
 \subsubsection{WPA/WPA2 Four-Way Handshake}
-The Four-Way Handshake protocol is used in both WPA and WPA2 to authenticate a station to an access point, to compute a pairwise transient key (PTK) to be used in future communication between these parties, and to distribute a group transient key (GTK) to be used by the station to communicate with other devices connected to the access point \cite{liu08}.  
+The Four-Way Handshake protocol is used in both WPA and WPA2 to authenticate a station to an access point, to compute a pairwise transient key (PTK) to be used in future communication between these parties, and to distribute a group transient key (GTK) to be used by the station to communicate with other devices connected to the access point \cite{liu08}.  The PTK actually consists of five different keys, but for the purposes of modeling the protocol it is sufficient to think of it as a single key.  We can assume that both the station and the access point begin by knowing the Pairwise Master Key (PMK), which will be used to compute the PTK.  The PMK is either computed by both parties in enterprise mode, or known ahead of time in pre-shared key mode (used for personal networks).
 
-TO-DO:Finsih this part
+TO-DO:Finsih this part!!!!
 
 \subsection{ProVerif}
 To formally prove the correctness of WEP and the Four-Way Handshake, we use the ProVerif Cryptographic Verifier created by Bruno Blanchet.  ProVerif uses prolog rules to encode the protocol and abstracts away fresh values and the number of steps in the protocol \cite{blanchet01}.  Instead, Proverif treats each fresh value as a function of other messages in the protocol, meaning that different values are used for each pair of protocol participants.  Each step in the protocol can be completed any number of times, and past steps can be re-executed arbitrarily.  This permits ProVerif to execute an unlimited number of runs of a protocol.  A protocol is proved to be secure by querying ProVerif whether an attacker knows a key or the content of some encrypted message. Since we assume that messages are placed on a channel \textit{c}, and that the attacker has access to all messages on \textit{c}, security is proved if the attacker cannot learn the security property despite access to all the messages. This verifier has been used to successfully prove the insecurity of protocols such as the Diffe-Hellman key exchange protocol, Initial Key Agreement, and the Needham-Schroeder symmetric-key protocol \cite{lafourcade10, abadi}.
@@ -88,11 +109,15 @@ In ProVerif, it is not necessary to explicitly model the attacker.  Rather, the 
 \subsection{Modeling Security Properties}
 
 \section{Analysis of Protocol Models}
+\label{sec:analysis}
 \subsection{WEP}
 \subsection{WPA/WPA2 Four-Way Handshake}
 
 \section{Conclusions and Future Work}
-
+\label{sec:conclude}
+\appendix
+\section{ProVerif Implementation of WEP}
+\section{ProVerif Implementation of Four-Way Handshake}
 \bibliographystyle{plain}
 \bibliography{wpaPaper}
 \end{document}
