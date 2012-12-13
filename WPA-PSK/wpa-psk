@@ -43,7 +43,7 @@ forall b:bitstring, d:bitstring; c((b,d)) -> c(b);
 forall b:bitstring, d:bitstring; c((b,d)) -> c(d);
 forall p:principal; c(p) & c(nAP[p]) -> c((nAP[p], p));
 forall b:bitstring, d:bitstring; c(b) & c(d) -> c((b,d));
-forall nap:bitstring, nsta:bitstring, p:principal, q:principal, key:bitstring; c((makePTK(nap, nsta, p, q, key)));
+forall nap:bitstring, nsta:bitstring, p:principal, q:principal, key:bitstring; c(key) -> c((makePTK(nap, nsta, p, q, key)));
 forall ptkKey:bitstring, p:principal, q:principal; c(ptkKey) -> c((mic(nSTA[p, q], ptkKey)));
 forall micString:bitstring, p:principal, q:principal; c(micString)->c((nSTA[p,q], micString));
 
@@ -57,4 +57,4 @@ forall p:principal; c((nSTA[p, AP[]], mic(nSTA[p, AP[]], makePTK(nAP[p], nSTA[p,
 (* STA *)
 forall p:principal; c((nAP[STA[]],p))-> c((nSTA[STA[], p], mic(nSTA[STA[], p], makePTK(nAP[STA[]], nSTA[STA[],p], p, STA[], PMK[]))));
 
-forall p:principal, q:principal, nap:bitstring, nsta:bitstring; c((makePTK(nap, nsta, p, q, PMK[]))) -> c(secret[]).
+forall p:principal, q:principal, nap:bitstring, nsta:bitstring; c(makePTK(nap, nsta, p, q, PMK[])) -> c(secret[]).
