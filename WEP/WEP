@@ -38,14 +38,14 @@ forall x:bitstring, y:bitstring; c(x) & c(y) -> c(xor(x,y));
 forall x:bitstring, y:bitstring, z:bitstring; c(xor(xor(x,y),xor(z,y))) -> c(xor(x,z));
 forall x:bitstring; c((x,checkSum(x))) -> c(x);
 forall x:bitstring; c((x,checkSum(x))) -> c(checkSum(x));
-(* A *)
-(*
-forall p:principal; c(v[A[], p]);
-forall p:principal; c( xor ((m[], checkSum(m[])), rc4(v[A[], p], Kab[]))).
-*)
-forall p:principal; c(v[]);
-forall p:principal, q:principal; c(xor((m[p],checkSum(m[p])),(m[q],checkSum(m[q])))) & p <> q -> c(secret[]);
+
+(* A -> B*)
+forall p:principal; c(v[]);  (* put IV on the channel *)
 forall p:principal; c( xor ((m[p], checkSum(m[p])), rc4(v[], Kab[]))).
+
+(*Invariant*)
+forall p:principal, q:principal; c(xor((m[p],checkSum(m[p])),(m[q],checkSum(m[q])))) & p <> q -> c(secret[]);
+
 (*
 c(v[]);
 c(xor ((m[], checkSum(m[])), rc4(v[], Kab[])));

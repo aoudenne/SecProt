@@ -16,6 +16,7 @@
 
 
 \usepackage{verbatim} % adds environment for commenting out blocks of text & for better verbatim
+\usepackage{moreverb} %for tabs in verbatim env
 \usepackage{subfig} % make it possible to include more than one captioned figure/table in a single float
 
 
@@ -81,7 +82,7 @@ Automatic verification has also been applied to WEP.  Lafourcade et al. found an
 \subsubsection{WEP}
 WEP, described in \cite{borisov01}, uses a one-message protocol to transmit data between two parties that relies on a secret key \textit{k} that has previously been shared between them.  The intention of this protocol is to provide the same confidentiality as that of a wired network \cite{IEEE802.11}.  Before a message is sent, an integrity checksum \textit{C(m)} is computed on the message so that the recipient can verify that the message has not been altered in transit.  The message is concatenated to this checksum to form the plaintext \textit{P}.
 
-The plaintext is now encrypted using the RC4 cipher.  The sender chooses an initialization vector IV and uses this vector along with the secret key \textit{k} to generate an arbitrary length sequence of pseudorandom bits known as a keystream.  The sender then uses exclusive-or (or XOR, denoted by $\oplus$) to XOR \textit{P} and the keystream to generate ciphertext \textit{C}.  The complete encryption process can be represented by: 
+The plaintext is now encrypted using the RC4 cipher.  The sender chooses an initialization vector IV and uses this vector along with the secret key \textit{k} to generate an arbitrary length sequence of pseudorandom bits known as a keystream \cite{spore}.  The sender then uses exclusive-or (or XOR, denoted by $\oplus$) to XOR \textit{P} and the keystream to generate ciphertext \textit{C}.  The complete encryption process can be represented by: 
 $$C = P \oplus RC4(IV, k)$$
 The message is then ready to be transmitted from the sender to the receiver.  We will represent this transmission symbolically as:
 $$A \rightarrow B: IV, (P \oplus RC4(IV, k)),$$
@@ -138,6 +139,14 @@ In ProVerif, it is not necessary to explicitly model the attacker.  Rather, the 
 \section{Analysis of Protocol Models}
 \label{sec:analysis}
 \subsection{WEP}
+In order to implement WEP in ProVerif, we first needed to identify an invariant that must hold true if the protocol is to be considered secure.  Since an attacker can use XOR to modify messages and decrypt messages encrypted using the same keystream, we chose as our invariant the property that if an attacker XORs two different messages on the channel that were encrypted using the same keystream, then a secret has been learned.  In ProVerif, this invariant can be modeled like this:
+
+\begin{verbatimtab}[4]  %the 4 is the number of tabbed spaces
+forall p:principal, q:principal; 
+	c(xor((m[p],checkSum(m[p])),
+		(m[q],checkSum(m[q])))) 
+			& p <> q -> c(secret[]).
+\end{verbatimtab}
 \subsection{WPA/WPA2 Four-Way Handshake}
 
 \section{Conclusions and Future Work}
