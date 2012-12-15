@@ -102,7 +102,7 @@ The recipient can then verify the integrity of the message by splitting \textit{
 \subsubsection{WPA/WPA2 Four-Way Handshake}
 The Four-Way Handshake protocol is used in both WPA and WPA2 to authenticate a station to an access point, to compute a pairwise transient key (PTK) to be used in future communication between these parties, and to distribute a group transient key (GTK) to be used by the station to communicate with other devices connected to the access point \cite{liu08}.  Once generated, the PTK is broken up into five different keys, but for the purposes of modeling the protocol it is sufficient to think of it as a single key.  We can assume that both the station and the access point begin by knowing the Pairwise Master Key (PMK), which will be used to compute the PTK.  The PMK is either computed by both parties in enterprise mode, or known ahead of time in pre-shared key mode (used for personal networks).
 
-The Four-Way Handshake proceeds as follows.  First, an access point sends a wireless station a fresh random nonce in the clear with no guarantee of integrity.  Once the station receives this nonce, it actually has all the information it needs to construct the PTK.  It does so by concatenating five values: the PMK, the access point's nonce, it's own fresh random nonce, the MAC address of the access point, and the station's own MAC address.  This concatenated value is then passed through a cryptographic hash function to derive the PTK.  
+The Four-Way Handshake proceeds as follows.  An access point and a wireless station each compute their own fresh random nonce, $N_A$ and $N_S$, respectively.  To begin the protocol, an access point sends a wireless station $N_A$ in the clear with no guarantee of integrity.  Once the station receives this nonce, it actually has all the information it needs to construct the PTK.  It does so by concatenating five values: the PMK, the access point's nonce, it's own fresh random nonce, the MAC address of the access point, and the station's own MAC address.  This concatenated value is then passed through a cryptographic hash function to derive the PTK.  
 
 Next, the station sends its nonce back to the access point along with a Message Authentication and Integrity code (MAIC) created by running a MAC algorithm on the nonce using the PTK as the secret key.  Once the access point has received the station's nonce and the corresponding MAIC, it can construct the PTK for itself.  Once it has the PTK, the access point can run the same MAC algorithm on the station's nonce to ensure both parties have a consistent PTK.  Notice that if the first message (the access point's nonce) was tampered with, the station and access point would not have a consistent PTK, and thus the integrity of the first message is guaranteed here.  At this point, the access point can reason that the station is legitimate as its PTK was derived from the shared secret PMK.  
 
@@ -112,7 +112,17 @@ Finally, the station merely sends back an acknowledgement to the access point, a
 
 This protocol can be summarized symbolically as: 
 
-TO-DO:Finsih this part!!!!
+\begin{enumerate}
+\item $AP \rightarrow STA: N_A$
+
+(Station calculates PTK)
+\item $STA \rightarrow AP: N_S, MAIC(N_S)$
+
+(Access point calculates PTK)
+\item $AP \rightarrow STA: \{GTK\}_{PTK}, MAIC(GTK)$
+\item $STA \rightarrow AP: ACK$
+\end{enumerate}
+
 
 \subsection{ProVerif}
 To formally prove the correctness of WEP and the Four-Way Handshake, we use the ProVerif Cryptographic Verifier created by Bruno Blanchet.  ProVerif uses prolog rules to encode the protocol and abstracts away fresh values and the number of steps in the protocol \cite{blanchet01}.  Instead, Proverif treats each fresh value as a function of other messages in the protocol, meaning that different values are used for each pair of protocol participants.  Each step in the protocol can be completed any number of times, and past steps can be re-executed arbitrarily.  This permits ProVerif to execute an unlimited number of runs of a protocol.  A protocol is proved to be secure with respect to some invariant by querying  whether ProVerif can generate the inverse of that invariant.  For example, a confidentiality invariant is proven by querying whether the attacker can learn a secret (e.g. a private key, or the contents of an encrypted message). Since we assume a Dolev-Yao attacker model, we assume that all messages on a channel \textit{c} are owned by the attacker.  The attacker can read, modify, generate, or delete any message he desires (though he cannot learn the contents of an encrypted message without the corresponding key). Since the attacker has unlimited access to all messages on \textit{c}, an invariant is proved if the attacker cannot invert that invariant despite access to all the messages. This verifier has been used to successfully prove the insecurity of protocols such as the Diffe-Hellman key exchange protocol, Initial Key Agreement, and the Needham-Schroeder symmetric-key protocol \cite{lafourcade10, abadi}.
