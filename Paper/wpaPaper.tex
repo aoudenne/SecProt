@@ -139,14 +139,17 @@ In ProVerif, it is not necessary to explicitly model the attacker.  Rather, the 
 \section{Analysis of Protocol Models}
 \label{sec:analysis}
 \subsection{WEP}
-In order to implement WEP in ProVerif, we first needed to identify an invariant that must hold true if the protocol is to be considered secure.  Since an attacker can use XOR to modify messages and decrypt messages encrypted using the same keystream, we chose as our invariant the property that if an attacker XORs two different messages on the channel that were encrypted using the same keystream, then a secret has been learned.  In ProVerif, this invariant can be modeled like this:
+In order to implement WEP in ProVerif, we first needed to identify an invariant that must hold true if the protocol is to be considered secure.  Since an attacker can use XOR to modify messages and decrypt messages encrypted using the same keystream, we chose as our invariant the property that if an attacker XORs two different messages on the channel that were encrypted using the same keystream, then a secret has been learned.  In ProVerif, this invariant can be modeled using ``forall" clauses on the possible principals in the protocol:
 
-\begin{verbatimtab}[4]  %the 4 is the number of tabbed spaces
+ %the 4 is the number of tabbed spaces
+\begin{verbatimtab}[4] 
 forall p:principal, q:principal; 
 	c(xor((m[p],checkSum(m[p])),
 		(m[q],checkSum(m[q])))) 
 			& p <> q -> c(secret[]).
 \end{verbatimtab}
+
+
 \subsection{WPA/WPA2 Four-Way Handshake}
 
 \section{Conclusions and Future Work}
