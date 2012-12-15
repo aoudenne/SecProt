@@ -4,6 +4,7 @@
 
 \usepackage[utf8]{inputenc} % set input encoding (not needed with XeLaTeX)
 \usepackage{amsmath}
+\usepackage{enumitem}
 
 %%% PAGE DIMENSIONS
 %\usepackage{geometry} % to change the page dimensions
@@ -113,15 +114,26 @@ Finally, the station merely sends back an acknowledgement to the access point, a
 
 This protocol can be summarized symbolically as: 
 
-\begin{enumerate}
+\begin{enumerate}[leftmargin=5mm]
+{\small
 \item $AP \rightarrow STA: N_A$
 
-(Station calculates PTK)
+{\tiny (STA calculates PTK)}
+
 \item $STA \rightarrow AP: N_S, MAIC(N_S)$
 
-(Access point calculates PTK)
-\item $AP \rightarrow STA: \{GTK\}_{PTK}, MAIC(GTK)$
+{\tiny (AP calculates PTK)
+
+(AP authenticates STA by verifying $MAIC(N_S)$) }
+
+\item $AP \rightarrow STA: \{GTK\}_{PTK}, MAIC(\{GTK\}_{PTK})$
+
+{\tiny (STA authenticates AP by verifying $MAIC(\{GTK\}_{PTK})$) }
+
 \item $STA \rightarrow AP: ACK$
+
+{\tiny (STA, AP install PTK for use in this session) }
+}
 \end{enumerate}
 
 
