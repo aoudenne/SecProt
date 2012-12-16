@@ -154,8 +154,10 @@ In ProVerif, it is not necessary to explicitly model the attacker.  Rather, the 
 \label{sec:analysis}
 \subsection{WEP}
 \subsubsection{ProVerif Model of WEP}
-In order to implement WEP in ProVerif, we first needed to model the message that principal A sends to principal B.  As described in section \ref{sec:WEP Desc}, A sends the message and its checksum ($\langle M, checksum(M)\rangle$) XORed with the keystream computed by using RC4 on a shared key $K_{AB}$ and an initialization vector $v$.  This is represented in ProVerif by the following:
+In order to implement WEP in ProVerif, we first needed to model the message that principal A sends to principal B.  As described in section \ref{sec:WEP Desc}, A sends the message and its checksum ($\langle M, checksum(M)\rangle$) XORed with the keystream computed by using RC4 on a shared key $K_{AB}$ and an initialization vector $v$.  Additionally, if the plaintext message is ever put on the channel, there is a security breach.  These two invariants are represented in ProVerif by the following:
 \begin{verbatimtab}[4]
+forall p:principal; c(m[p]) -> c(secret[]);
+
 forall p:principal; 
 	c(xor((m[p], checkSum(m[p])), 
 		rc4(v[], Kab[])));
@@ -187,8 +189,9 @@ As \cite{lafourcade10} and \cite{borisov01} discovered, WEP is highly vulnerable
 This is a very serious vulnerability.  If the attacker knows either $P_1$ or $P_2$, he can recover the other message easily.  Once a plaintext message is known, the keystream used to encrypt the message can be recovered by XORing the plaintext and the ciphertext together.  Since WEP does nothing to prevent the reuse of old IVs, an attacker can now circumvent WEP and use the recovered keystream and IV indefinitely \cite{borisov01}.  Clearly, this protocol is not secure enough for the transmission of data.
 
 \subsection{WPA/WPA2 Four-Way Handshake}
+\subsubsection{ProVerif Model of Four-Way Handshake}
 Implementing the Four-Way Handshake in ProVerif is more complicated than implementing WEP.  We begin by representing the protocol as a series of messages.  While the messages can be sent in any order, a message can't be sent until it's predecessor message has been placed on the channel (ex. once message 2 is put on the channel, message 3 can then be put on the channel any number of times, in any order). As we describe in Section \ref{sec:WPA Desc}, the Four-Way handshake is a series of nonce exchanges (represented as nSTA and nAP for the station and the access point, respectively), verifications using a message authentication and integrity code (represented as maic()), and MAC addresses that are used to calculate the PTK (represented as makePTK()).  In our implementation, we send the "MAC" address of the sender of each message (which we simply model as the principal's ID).  We also identify each message using a wrapper (ex. msg1()) for convenience in ProVerif.  The protocol is represented as follows:
-\begin{enumerate}
+\begin{enumerate}[leftmargin=4mm]
 \item
 \begin{verbatimtab}[2]
 forall p:principal; c(msg1(nAP[p], AP[]));
@@ -197,30 +200,62 @@ forall p:principal; c(msg1(nAP[p], AP[]));
 \begin{verbatimtab}[2]
 forall p:principal, n:bitstring; 
 	c(msg1(n,p))->c(msg2(nSTA[STA[],p], 
-		maic(nSTA[STA[], p], makePTK(n, 
-			nSTA[STA[],p],p, STA[], PMK[]))));
+		maic(nSTA[STA[], p], 
+			makePTK(n, nSTA[STA[],p],
+				p, STA[], PMK[]))));
 \end{verbatimtab}
 \item
 \begin{verbatimtab}[2]
 forall p:principal, n:bitstring; 
-	c(msg2(n,maic(n, makePTK(nAP[p],n, AP[],
-		p, PMK[])))) -> c(msg3(encrypt(GTK[], 
-				makePTK(nAP[p],n,AP[],p,PMK[]))));
+	c(msg2(n,maic(n, makePTK(nAP[p],
+		n, AP[],p, PMK[])))) -> 
+			c(msg3(encrypt(GTK[], 
+				makePTK(nAP[p],n,AP[],
+					p,PMK[]))));
 \end{verbatimtab}
 \item
 \begin{verbatimtab}[2]
 forall p:principal, n:bitstring; 
 	c(msg3(encrypt(GTK[], makePTK(n,
-		nSTA[STA[],p],p, STA[], PMK[]))))
-			 -> c(msg4(encrypt(nSTA[STA[],p],
+		nSTA[STA[],p],p, STA[], PMK[])))) 
+			->c(msg4(encrypt(nSTA[STA[],p],
 					makePTK(n,nSTA[STA[],p],
 						p,STA[],PMK[]))));
 \end{verbatimtab}
 \end{enumerate}
 
-We then define an invariant that must hold if this protocol is to be considered secure.  Security is leaked if the 
-\subsubsection{ProVerif Model of Four-Way Handshake}
+We then define invariants that must hold if this protocol is to be considered secure.  Security is leaked if the PMK, GTK, or PTK is ever placed on the channel (this would represent the attacker being able to calculate these secret keys).  Authentication is violated if message four is sent and key installation would then happen between any principals other than the station and the access point.  Liveness is guaranteed as long as the station never generates inconsistent PTKs.  If an attack is generated that causes the station to have inconsistent PTKs, as described in Section \ref{sec:Related Work} and in \cite{he04}, then the station will be unable to communicate with the access point.  After a period of time, the access point will try to reinitiate the protocol with the station.  The attacker can then repeat his attack, causing the station to again have inconsistent PTKs.  This repeated process causes a Denial of Service attack.  In our implementation of the Four-Way Handshake, we say that the liveness invariant is violated if a station's PTKs are inconsistant once, since if the attack can be mounted once, it can be mounted again to cause a Denial of Service attack.  These three kinds of invariants can be modeled as follows:
 
+\begin{verbatimtab}[3]
+(* DoS *)
+forall p:principal, q:principal, 
+	nap:bitstring, nsta:bitstring, 
+		natt:bitstring; c(maic(nsta,
+			makePTK(nap,nsta,p,q,PMK[]))) & 
+				c(maic(nsta,makePTK(natt,nsta,
+					p, q,PMK[]))) & 
+						nap <> natt -> c(dos[]); 
+
+(* Confidentiality *)
+c(PMK[]) -> c(secret[]);
+
+forall p:principal, q:principal, 
+	n1:bitstring, n2:bitstring; 
+		c(makePTK(n1, n2, p, q, PMK[])) 
+			-> c(secret[]); 
+
+c(GTK[]) -> c(secret[]);
+
+(* Authentication *)
+forall p:principal, q:principal, 
+	n1:bitstring, n2:bitstring; 
+		c(msg4(encrypt(nSTA[p,q],
+			makePTK(n1,n2,p,q,PMK[])))) 
+				& p <> AP[] & 
+					q <> STA[] -> c(authFail[]).
+\end{verbatimtab}
+
+We define the capabilities of the attacker to be those of the Dolev-Yao attacker model.  For the Four-Way Handshake 
 \subsubsection{Attack on Four-Way Handshake}
 \section{Conclusions and Future Work}
 \label{sec:conclude}
