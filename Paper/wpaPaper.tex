@@ -164,7 +164,7 @@ forall p:principal;
 \end{verbatimtab}
 
 
-We next identify an invariant that must hold true if the protocol is to be considered secure.  Since an attacker can use XOR to modify messages and decrypt messages encrypted using the same keystream, we chose as our invariant the property that if an attacker XORs two different messages on the channel that were encrypted using the same keystream, then a secret has been learned.  We then query ProVerif to determine whether the secret can ever be learned in all possible sequences of messages.  In ProVerif, this invariant can be modeled using ``forall" clauses on the possible principals in the protocol:
+We next identify an invariant that must hold true if the protocol is to be considered secure.  Since an attacker can use XOR to modify messages and decrypt messages encrypted using the same keystream, we chose as our invariant the property that if an attacker XORs two different messages on the channel that were encrypted using the same keystream, then a secret has been learned.  We then query ProVerif to determine whether the secret can ever be learned in all possible sequences of messages.  In ProVerif, this invariant (represented as secret[]) can be modeled using ``forall" clauses on the possible principals in the protocol:
 
  %the 4 is the number of tabbed spaces
 \begin{verbatimtab}[4] 
@@ -174,7 +174,7 @@ forall p:principal, q:principal;
 			& p <> q -> c(secret[]).
 \end{verbatimtab}
 
-Finally, the attacker must have some knowledge of what to do with messages that are placed on the channel.  For WEP, an attacker knows how to encrypt and decrypt messages, XOR messages together, and compute the checksum of messages.  Importantly, this means that given two encrypted messages which re-used the same keystreams (because the IV was reused), the attacker can XOR the two messages together, which removes the encryption on both of them.  Though the attacker wouldn't yet have recovered the plaintext of a message, the resulting XOR would be quite vulnerable to statistical attacks or the exploitation of regular structure in messages.
+Finally, the attacker must have some knowledge of what to do with messages that are placed on the channel.  For WEP, an attacker knows how to encrypt and decrypt messages, XOR messages together, and compute the checksum of messages.  Importantly, this means that given two encrypted messages which re-used the same keystreams (because the IV was reused), the attacker can XOR the two messages together, which removes the encryption on both of them.  Though the attacker wouldn't yet have recovered the plaintext of a message, the resulting XOR would be quite vulnerable to statistical attacks or the exploitation of regular structure in messages.  Please see Appendix \ref{sec: Appendix WEP} for the complete ProVerif implementation of WEP.
 \subsubsection{Attack on WEP}
 As \cite{lafourcade10} and \cite{borisov01} discovered, WEP is highly vulnerable to keystream reuse attacks.  In our model, Proverif identified the following keystream reuse attack that allows the attacker to learn information about two messages he overhears on the channel ($P$ represents the $\langle m, checksum(m)\rangle$ pair):
 
@@ -224,7 +224,7 @@ forall p:principal, n:bitstring;
 \end{verbatimtab}
 \end{enumerate}
 
-We then define invariants that must hold if this protocol is to be considered secure.  Security is leaked if the PMK, GTK, or PTK is ever placed on the channel (this would represent the attacker being able to calculate these secret keys).  Authentication is violated if message four is sent and key installation would then happen between any principals other than the station and the access point.  Liveness is guaranteed as long as the station never generates inconsistent PTKs.  If an attack is generated that causes the station to have inconsistent PTKs, as described in Section \ref{sec:Related Work} and in \cite{he04}, then the station will be unable to communicate with the access point.  After a period of time, the access point will try to reinitiate the protocol with the station.  The attacker can then repeat his attack, causing the station to again have inconsistent PTKs.  This repeated process causes a Denial of Service attack.  In our implementation of the Four-Way Handshake, we say that the liveness invariant is violated if a station's PTKs are inconsistant once, since if the attack can be mounted once, it can be mounted again to cause a Denial of Service attack.  These three kinds of invariants can be modeled as follows:
+We then define invariants that must hold if this protocol is to be considered secure.  Security is leaked if the PMK, GTK, or PTK is ever placed on the channel (this would represent the attacker being able to calculate these secret keys).  Authentication is violated if message four is sent and key installation would then happen between any principals other than the station and the access point.  Liveness is guaranteed as long as the station never generates inconsistent PTKs.  If an attack is generated that causes the station to have inconsistent PTKs, as described in Section \ref{sec:Related Work} and in \cite{he04}, then the station will be unable to communicate with the access point.  After a period of time, the access point will try to reinitiate the protocol with the station.  The attacker can then repeat his attack, causing the station to again have inconsistent PTKs.  This repeated process causes a Denial of Service attack.  In our implementation of the Four-Way Handshake, we say that the liveness invariant is violated if a station's PTKs are inconsistant once, since if the attack can be mounted once, it can be mounted again to cause a Denial of Service attack.  These three kinds of invariants (represented as dos[], authFail[], and secret[]) can be modeled as follows:
 
 \begin{verbatimtab}[3]
 (* DoS *)
@@ -255,7 +255,8 @@ forall p:principal, q:principal,
 					q <> STA[] -> c(authFail[]).
 \end{verbatimtab}
 
-We define the capabilities of the attacker to be those of the Dolev-Yao attacker model.  For the Four-Way Handshake 
+We define the capabilities of the attacker to be those of the Dolev-Yao attacker model.  For the Four-Way Handshake, the attacker can generate fake bitstring, encrypt and decrypt the GTK, generate any of the messages in the protocol using fake data, calculate the PTK, and generate MAICs.  Please see Appendix \ref{sec: Appendix WPA} for the complete ProVerif implementation of the Four-Way Handshake.
+
 \subsubsection{Attack on Four-Way Handshake}
 Utilizing the ProVerif resolution engine, we determined that confidentiality and authentication properties hold for the Four-Way Handshake protocol as intended, even against the very powerful Dolev-Yao model of attacker.  However, as previous seen in \cite{he04}, the protocol is vulnerable to a very simple denial-of-service (DoS) attack.  We consider this to be a significantly lower-threat attack as no secrets are leaked and no impersonation can take place.  Further, by definition, a Dolev-Yao attacker controls the network, and is thus capable of mounting a DoS.  Unfortuately, the attack could be feasibly generated by a much less powerful attacker.  All that is necessary is the ability to inject messages into the network.  
 
@@ -296,5 +297,7 @@ A graphical depiction of the attack is presented as:
 \bibliography{wpaPaper}
 \appendix
 \section{ProVerif Implementation of WEP}
+\label{sec:Appendix WEP}
 \section{ProVerif Implementation of Four-Way Handshake}
+\label{sec: Appendix WPA}
 \end{document}
