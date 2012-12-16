@@ -44,8 +44,8 @@ forall x:bitstring, y:bitstring, z:bitstring; c(xor(xor(x,y),xor(z,y))) -> c(xor
 forall x:bitstring; c(x) -> c(checkSum(x)); (* Generate a checksum for any known message *)
 
 (* Decompose two part message *)
-forall x:bitstring; c((x,checkSum(x))) -> c(x); 
-forall x:bitstring; c((x,checkSum(x))) -> c(checkSum(x));
+forall x:bitstring,y:bitstring; c((x,y)) -> c(x); 
+forall x:bitstring, y:bitstring; c((x,y)) -> c(y);
 
 (* Create two part message *)
 forall x:bitstring, y:bitstring; c(x) & c(y) -> c((x,y));
