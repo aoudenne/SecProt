@@ -1,4 +1,14 @@
-(* Making cool protocol of WEP *)
+(* WEP Protocol in ProVerif
+   by Jerremy Adams and Ashley Oudenne
+   
+   
+   Protocol Descriptions:
+   A -> B : v, (P XOR RC4(v, kAB)
+   
+   where P = <m, checksum(m)>
+   
+   
+ *)
 
 pred c(any_type) [decompData, elimVar].
 
@@ -25,19 +35,22 @@ query c(secret[]).
 
 clauses
 
-(* The Attacker *)
+(* The Attacker, and all participants, can do the following *)
 
+(* XOR capabilities *)
 forall x:bitstring, y:bitstring; c(xor(x,y)) -> c(xor(y,x));
 forall x:bitstring, y:bitstring; c(xor(x,y)) & c(x) -> c(y);
 forall x:bitstring, y:bitstring; c(xor(x,y)) & c(y) -> c(x);
 forall x:bitstring, y:bitstring; c(x) & c(y) -> c(xor(x,y));
 forall x:bitstring, y:bitstring, z:bitstring; c(xor(xor(x,y),xor(z,y))) -> c(xor(x,z));
+(* Checksum capabilities *)
 forall x:bitstring; c((x,checkSum(x))) -> c(x);
 forall x:bitstring; c((x,checkSum(x))) -> c(checkSum(x));
 
 (* A -> B*)
 forall p:principal; c(v[]);  (* put IV on the channel *)
 forall p:principal; c( xor ((m[p], checkSum(m[p])), rc4(v[], Kab[])));
+
 (*Invariant*)
 forall p:principal, q:principal; c(xor((m[p],checkSum(m[p])),(m[q],checkSum(m[q])))) & p <> q -> c(secret[]).
 
