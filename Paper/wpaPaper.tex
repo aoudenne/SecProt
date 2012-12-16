@@ -150,7 +150,15 @@ In ProVerif, it is not necessary to explicitly model the attacker.  Rather, the 
 \section{Analysis of Protocol Models}
 \label{sec:analysis}
 \subsection{WEP}
-In order to implement WEP in ProVerif, we first needed to identify an invariant that must hold true if the protocol is to be considered secure.  Since an attacker can use XOR to modify messages and decrypt messages encrypted using the same keystream, we chose as our invariant the property that if an attacker XORs two different messages on the channel that were encrypted using the same keystream, then a secret has been learned.  We then query ProVerif to determine whether the secret can ever be learned in all possible sequences of messages.  In ProVerif, this invariant can be modeled using ``forall" clauses on the possible principals in the protocol:
+In order to implement WEP in ProVerif, we first needed to model the message that principal A sends to principal B.  A sends the message and its checksum ($\langle M, checksum(M)\rangle$) XORed with the keystream computed by using RC4 on a shared key $K_{AB}$ and an initialization vector $v$.  This is represented in ProVerif by the following:
+\begin{verbatimtab}[4]
+forall p:principal; 
+	c(xor((m[p], checkSum(m[p])), 
+		rc4(v[], Kab[])));
+\end{verbatimtab}
+
+
+We next identify an invariant that must hold true if the protocol is to be considered secure.  Since an attacker can use XOR to modify messages and decrypt messages encrypted using the same keystream, we chose as our invariant the property that if an attacker XORs two different messages on the channel that were encrypted using the same keystream, then a secret has been learned.  We then query ProVerif to determine whether the secret can ever be learned in all possible sequences of messages.  In ProVerif, this invariant can be modeled using ``forall" clauses on the possible principals in the protocol:
 
  %the 4 is the number of tabbed spaces
 \begin{verbatimtab}[4] 
@@ -160,7 +168,8 @@ forall p:principal, q:principal;
 			& p <> q -> c(secret[]).
 \end{verbatimtab}
 
-The attacker must have some knowledge of what to do with messages that are placed on the channel.  For WEP, an attacker knows how to encrypt and decrypt messages, XOR messages together that have the same IV, and split messages that are being XORed together into individual messages.  Most importantly, if the XORs of two messages are XORed together, and the keystream used to encode both messages is the same (because the IV was reused), the attacker can XOR both of the messages together, which removes the encryption on both of them.
+Finally, the attacker must have some knowledge of what to do with messages that are placed on the channel.  For WEP, an attacker knows how to encrypt and decrypt messages, XOR messages together that have the same IV, and split messages that are being XORed together into individual messages.  Most importantly, if the XORs of two messages are XORed together, and the keystream used to encode both messages is the same (because the IV was reused), the attacker can XOR both of the messages together, which removes the encryption on both of them.
+
 \subsection{WPA/WPA2 Four-Way Handshake}
 
 \section{Conclusions and Future Work}
