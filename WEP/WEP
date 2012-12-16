@@ -18,19 +18,15 @@ name m:bitstring.
 name m2:bitstring.
 name secret:bitstring.
 
-(*
-query c((m[],checkSum(m[]))).
-query c((m2[],checkSum(m2[]))).
-query c(xor((m[],checkSum(m[])),(m2[],checkSum(m2[])))).
-*)
+
 query c(secret[]).
 
-(*let's not worry about nots right now*)
+
 
 clauses
 
 (* The Attacker *)
-(*forall vec:initVector, sKey:symKeys*)
+
 forall x:bitstring, y:bitstring; c(xor(x,y)) -> c(xor(y,x));
 forall x:bitstring, y:bitstring; c(xor(x,y)) & c(x) -> c(y);
 forall x:bitstring, y:bitstring; c(xor(x,y)) & c(y) -> c(x);
@@ -41,12 +37,7 @@ forall x:bitstring; c((x,checkSum(x))) -> c(checkSum(x));
 
 (* A -> B*)
 forall p:principal; c(v[]);  (* put IV on the channel *)
-forall p:principal; c( xor ((m[p], checkSum(m[p])), rc4(v[], Kab[]))).
-
+forall p:principal; c( xor ((m[p], checkSum(m[p])), rc4(v[], Kab[])));
 (*Invariant*)
-forall p:principal, q:principal; c(xor((m[p],checkSum(m[p])),(m[q],checkSum(m[q])))) & p <> q -> c(secret[]);
+forall p:principal, q:principal; c(xor((m[p],checkSum(m[p])),(m[q],checkSum(m[q])))) & p <> q -> c(secret[]).
 
-(*
-c(v[]);
-c(xor ((m[], checkSum(m[])), rc4(v[], Kab[])));
-c(xor ((m2[], checkSum(m2[])), rc4(v[], Kab[]))).*)
