@@ -80,6 +80,7 @@ Automatic verification has also been applied to WEP.  Lafourcade et al. found an
 \label{sec:model}
 \subsection{Protocol Descriptions}
 \subsubsection{WEP}
+\label{sec:WEP Desc}
 WEP, described in \cite{borisov01}, uses a one-message protocol to transmit data between two parties that relies on a secret key \textit{k} that has previously been shared between them.  The intention of this protocol is to provide the same confidentiality as that of a wired network \cite{IEEE802.11}.  Before a message is sent, an integrity checksum \textit{C(m)} is computed on the message so that the recipient can verify that the message has not been altered in transit.  The message is concatenated to this checksum to form the plaintext \textit{P}.
 
 The plaintext is now encrypted using the RC4 cipher.  The sender chooses an initialization vector IV and uses this vector along with the secret key \textit{k} to generate an arbitrary length sequence of pseudorandom bits known as a keystream \cite{spore}.  The sender then uses exclusive-or (or XOR, denoted by $\oplus$) to XOR \textit{P} and the keystream to generate ciphertext \textit{C}.  The complete encryption process can be represented by: 
@@ -150,7 +151,7 @@ In ProVerif, it is not necessary to explicitly model the attacker.  Rather, the 
 \section{Analysis of Protocol Models}
 \label{sec:analysis}
 \subsection{WEP}
-In order to implement WEP in ProVerif, we first needed to model the message that principal A sends to principal B.  A sends the message and its checksum ($\langle M, checksum(M)\rangle$) XORed with the keystream computed by using RC4 on a shared key $K_{AB}$ and an initialization vector $v$.  This is represented in ProVerif by the following:
+In order to implement WEP in ProVerif, we first needed to model the message that principal A sends to principal B.  As described in section \ref{sec:WEP Desc}, A sends the message and its checksum ($\langle M, checksum(M)\rangle$) XORed with the keystream computed by using RC4 on a shared key $K_{AB}$ and an initialization vector $v$.  This is represented in ProVerif by the following:
 \begin{verbatimtab}[4]
 forall p:principal; 
 	c(xor((m[p], checkSum(m[p])), 
