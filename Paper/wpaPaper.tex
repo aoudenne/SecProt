@@ -103,6 +103,7 @@ The recipient can then verify the integrity of the message by splitting \textit{
 {%We should say something like: The protocol intends for this to guarantee integrity, except not shitty.   quote: The integrity check field is implemented as a CRC-32 checksum, which is part of the encrypted payload of the packet. However, CRC-32 is linear, which means that it is possible to compute the bit difference of two CRCs based on the bit difference of the messages over which they are taken. In other words, flipping bit n in the message results in a deterministic set of bits in the CRC that must be flipped to produce a correct checksum on the modified message. Because flipping bits carries through after an RC4 decryption, this allows the attacker to flip arbitrary bits in an encrypted message and correctly adjust the checksum so that the resulting message appears valid.%}
 
 \subsubsection{WPA/WPA2 Four-Way Handshake}
+\label{sec:WPA Dec}
 The Four-Way Handshake protocol is used in both WPA and WPA2 to authenticate a station to an access point, to compute a pairwise transient key (PTK) to be used in future communication between these parties, and to distribute a group transient key (GTK) to be used by the station to communicate with other devices connected to the access point \cite{liu08}.  Once generated, the PTK is broken up into five different keys, but for the purposes of modeling the protocol it is sufficient to think of it as a single key.  We can assume that both the station and the access point begin by knowing the Pairwise Master Key (PMK), which will be used to compute the PTK.  The PMK is either computed by both parties in enterprise mode, or known ahead of time in pre-shared key mode (used for personal networks).
 
 The Four-Way Handshake proceeds as follows.  An access point and a wireless station each compute their own fresh random nonce, $N_A$ and $N_S$, respectively.  To begin the protocol, an access point sends a wireless station $N_A$ in the clear with no guarantee of integrity.  Once the station receives this nonce, it actually has all the information it needs to construct the PTK.  It does so by concatenating five values: the PMK, the access point's nonce, it's own fresh random nonce, the MAC address of the access point, and the station's own MAC address.  This concatenated value is then passed through a cryptographic hash function to derive the PTK.  
@@ -177,21 +178,56 @@ As \cite{lafourcade10} and \cite{borisov01} discovered, WEP is highly vulnerable
 
 \begin{enumerate}
 %\itemsep-4mm
-\item $A\rightarrow B:  IV, (P \oplus RC4(IV, k))$
-\item $A \rightarrow B: IV, (P' \oplus RC4(IV, k))$
-\item Attacker: $(P \oplus RC4(IV, k)) \oplus \\(P' \oplus RC4(IV, k))$
-\item Attacker: $P \oplus P'$
+\item $A\rightarrow B:  IV, (P_1 \oplus RC4(IV, k))$
+\item $A \rightarrow B: IV, (P_2 \oplus RC4(IV, k))$
+\item Attacker: $(P_1 \oplus RC4(IV, k)) \oplus \\(P_2 \oplus RC4(IV, k))$
+\item Attacker: $P_1 \oplus P_2$
 \end{enumerate}
 
-This is a very serious vulnerability.  If the attacker knows either $P$ or $P'$, he can recover the other message easily.  Once a plaintext message is known, the keystream used to encrypt the message can be recovered by XORing the plaintext and the ciphertext together.  Since WEP does nothing to prevent the reuse of old IVs, an attacker can now circumvent WEP and use the recovered keystream and IV indefinitely \cite{borisov01}.  Clearly, this protocol is not secure enough for the transmission of data.
+This is a very serious vulnerability.  If the attacker knows either $P_1$ or $P_2$, he can recover the other message easily.  Once a plaintext message is known, the keystream used to encrypt the message can be recovered by XORing the plaintext and the ciphertext together.  Since WEP does nothing to prevent the reuse of old IVs, an attacker can now circumvent WEP and use the recovered keystream and IV indefinitely \cite{borisov01}.  Clearly, this protocol is not secure enough for the transmission of data.
 
 \subsection{WPA/WPA2 Four-Way Handshake}
+Implementing the Four-Way Handshake in ProVerif is more complicated than implementing WEP.  We begin by representing the protocol as a series of messages.  While the messages can be sent in any order, a message can't be sent until it's predecessor message has been placed on the channel (ex. once message 2 is put on the channel, message 3 can then be put on the channel any number of times, in any order). As we describe in Section \ref{sec:WPA Desc}, the Four-Way handshake is a series of nonce exchanges (represented as nSTA and nAP for the station and the access point, respectively), verifications using a message authentication and integrity code (represented as maic()), and MAC addresses that are used to calculate the PTK (represented as makePTK()).  In our implementation, we send the "MAC" address of the sender of each message (which we simply model as the principal's ID).  We also identify each message using a wrapper (ex. msg1()) for convenience in ProVerif.  The protocol is represented as follows:
+\begin{enumerate}
+\item
+\begin{verbatimtab}[2]
+forall p:principal; c(msg1(nAP[p], AP[]));
+\end{verbatimtab}
+\item
+\begin{verbatimtab}[2]
+forall p:principal, n:bitstring; 
+	c(msg1(n,p))->c(msg2(nSTA[STA[],p], 
+		maic(nSTA[STA[], p], makePTK(n, 
+			nSTA[STA[],p],p, STA[], PMK[]))));
+\end{verbatimtab}
+\item
+\begin{verbatimtab}[2]
+forall p:principal, n:bitstring; 
+	c(msg2(n,maic(n, makePTK(nAP[p],n, AP[],
+		p, PMK[])))) -> c(msg3(encrypt(GTK[], 
+				makePTK(nAP[p],n,AP[],p,PMK[]))));
+\end{verbatimtab}
+\item
+\begin{verbatimtab}[2]
+forall p:principal, n:bitstring; 
+	c(msg3(encrypt(GTK[], makePTK(n,
+		nSTA[STA[],p],p, STA[], PMK[]))))
+			 -> c(msg4(encrypt(nSTA[STA[],p],
+					makePTK(n,nSTA[STA[],p],
+						p,STA[],PMK[]))));
+\end{verbatimtab}
+\end{enumerate}
 
+We then define an invariant that must hold if this protocol is to be considered secure.  Security is leaked if the 
+\subsubsection{ProVerif Model of Four-Way Handshake}
+
+\subsubsection{Attack on Four-Way Handshake}
 \section{Conclusions and Future Work}
 \label{sec:conclude}
+
+\bibliographystyle{plain}
+\bibliography{wpaPaper}
 \appendix
 \section{ProVerif Implementation of WEP}
 \section{ProVerif Implementation of Four-Way Handshake}
-\bibliographystyle{plain}
-\bibliography{wpaPaper}
 \end{document}
