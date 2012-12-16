@@ -5,6 +5,7 @@
 \usepackage[utf8]{inputenc} % set input encoding (not needed with XeLaTeX)
 \usepackage{amsmath}
 \usepackage{enumitem}
+\usepackage{url}
 %%% PAGE DIMENSIONS
 %\usepackage{geometry} % to change the page dimensions
 %\geometry{letterpaper} % or letterpaper (US) or a5paper or....
@@ -172,16 +173,17 @@ forall p:principal, q:principal;
 
 Finally, the attacker must have some knowledge of what to do with messages that are placed on the channel.  For WEP, an attacker knows how to encrypt and decrypt messages, XOR messages together, and compute the checksum of messages.  Importantly, this means that given two encrypted messages which re-used the same keystreams (because the IV was reused), the attacker can XOR the two messages together, which removes the encryption on both of them.  Though the attacker wouldn't yet have recovered the plaintext of a message, the resulting XOR would be quite vulnerable to statistical attacks or the exploitation of regular structure in messages.
 \subsubsection{Attack on WEP}
-As \cite{lafourcade10} and \cite{borisov01} discovered, WEP is highly vulnerable to keystream reuse attacks.  In our model, Proverif identified the following keystream reuse attack that allows the attacker to learn information about two messages he overhears on the channel:
+As \cite{lafourcade10} and \cite{borisov01} discovered, WEP is highly vulnerable to keystream reuse attacks.  In our model, Proverif identified the following keystream reuse attack that allows the attacker to learn information about two messages he overhears on the channel ($P$ represents the $\langle m, checksum(m)\rangle$ pair):
 
 \begin{enumerate}
-\itemsep-4mm
+%\itemsep-4mm
 \item $A\rightarrow B:  IV, (P \oplus RC4(IV, k))$
 \item $A \rightarrow B: IV, (P' \oplus RC4(IV, k))$
-\item Attacker: $(P \oplus RC4(IV, k)) \oplus (P' \oplus RC4(IV, k))$
+\item Attacker: $(P \oplus RC4(IV, k)) \oplus \\(P' \oplus RC4(IV, k))$
 \item Attacker: $P \oplus P'$
 \end{enumerate}
 
+This is a very serious vulnerability.  If the attacker knows either $P$ or $P'$, he can recover the other message easily.  Once a plaintext message is known, the keystream used to encrypt the message can be recovered by XORing the plaintext and the ciphertext together.  Since WEP does nothing to prevent the reuse of old IVs, an attacker can now circumvent WEP and use the recovered keystream and IV indefinitely \cite{borisov01}.  Clearly, this protocol is not secure enough for the transmission of data.
 
 \subsection{WPA/WPA2 Four-Way Handshake}
 
