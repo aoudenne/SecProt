@@ -169,7 +169,7 @@ forall p:principal, q:principal;
 			& p <> q -> c(secret[]).
 \end{verbatimtab}
 
-Finally, the attacker must have some knowledge of what to do with messages that are placed on the channel.  For WEP, an attacker knows how to encrypt and decrypt messages, XOR messages together that have the same IV, and split messages that are being XORed together into individual messages.  Most importantly, if the XORs of two messages are XORed together, and the keystream used to encode both messages is the same (because the IV was reused), the attacker can XOR both of the messages together, which removes the encryption on both of them.
+Finally, the attacker must have some knowledge of what to do with messages that are placed on the channel.  For WEP, an attacker knows how to encrypt and decrypt messages, XOR messages together, and compute the checksum of messages.  Importantly, this means that given two encrypted messages which re-used the same keystreams (because the IV was reused), the attacker can XOR the two messages together, which removes the encryption on both of them.  Though the attacker wouldn't yet have recovered the plaintext of a message, the resulting XOR would be quite vulnerable to statistical attacks or the exploitation of regular structure in messages.
 
 \subsection{WPA/WPA2 Four-Way Handshake}
 
