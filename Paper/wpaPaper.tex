@@ -227,7 +227,7 @@ forall p:principal, n:bitstring;
 We then define invariants that must hold if this protocol is to be considered secure.  Security is leaked if the PMK, GTK, or PTK is ever placed on the channel (this would represent the attacker being able to calculate these secret keys).  Authentication is violated if message four is sent and key installation would then happen between any principals other than the station and the access point.  Liveness is guaranteed as long as the station never generates inconsistent PTKs.  If an attack is generated that causes the station to have inconsistent PTKs, as described in Section \ref{sec:Related Work} and in \cite{he04}, then the station will be unable to communicate with the access point.  After a period of time, the access point will try to reinitiate the protocol with the station.  The attacker can then repeat his attack, causing the station to again have inconsistent PTKs.  This repeated process causes a Denial of Service attack.  In our implementation of the Four-Way Handshake, we say that the liveness invariant is violated if a station's PTKs are inconsistant once, since if the attack can be mounted once, it can be mounted again to cause a Denial of Service attack.  These three kinds of invariants (represented as dos[], authFail[], and secret[]) can be modeled as follows:
 
 \begin{verbatimtab}[3]
-(* DoS *)
+(* Liveness *)
 forall p:principal, q:principal, 
 	nap:bitstring, nsta:bitstring, 
 		natt:bitstring; c(maic(nsta,
@@ -274,7 +274,7 @@ A graphical depiction of the attack is presented as:
 
 {\tiny (AP calculates PTK) }
 
-\item $Attacker \rightarrow AP: N_{Att}$
+\item $Attacker \rightarrow STA: N_{Att}$
 
 {\tiny (STA re-calculates PTK) }
 
@@ -292,7 +292,9 @@ A graphical depiction of the attack is presented as:
 \end{enumerate}
 \section{Conclusions and Future Work}
 \label{sec:conclude}
+Confidentiality and authentication are two very important properties that must hold in order for an internet protocol to be considered secure.  WEP, unfortunately, was unable to provide them due to its use of the insecure RC4 cipher and the fact that initialization vectors were frequently reused.  802.11i, however, guarantees both authentication and security, and automatic correctness verifiers can find no attack that would violate either principle.
 
+Unfortunately, it is not enough to only provide authentication and confidentiality.  Much of today's business transactions are conducted electronically, and companies cannot afford a Denial of Service attack. For this reason, 802.11i needs to be modified.  Changhua He et al. claim that their solution of nonce reuse has been adopted by the 802.11i standards committee \cite{heMitchell05}.  
 \bibliographystyle{plain}
 \bibliography{wpaPaper}
 \appendix
