@@ -30,7 +30,7 @@
 
 
 
-\title{\textbf{Brief yet Scintillating Article about WEP and WPA2}}
+\title{\textbf{Formal Verification of Wireless Network Protocols}}
 \author{
 	Ashley Oudenne\\
 	The University of Texas at Austin\\
@@ -46,9 +46,8 @@
 \begin{document}
 \maketitle
 \begin{abstract}
-Interesting vague things about our paper.
-200 words or less, and should say something like:
-In this paper, we present the WEP and WPA Four-Way Handshake protocols in detail and formally model them using the ProVerif Cryptographic Verifier. 
+In this paper, we present the WEP and WPA Four-Way Handshake protocols for wireless communication.  We formally model each protocol using the ProVerif Cryptographic Verifier in order to determine whether the protocols provide necessary security properties such as authentication, integrity, confidentiality and liveness.  We describe a significant security breach discovered in the WEP protocol in which an attacker can decrypt and inject messages into the network at will.  In addition, we describe a liveness attack on the WPA Four-Way Handshake protocol.  
+ 
 \end{abstract}
 
 \section{Introduction}
@@ -75,7 +74,7 @@ The authors also discuss the risk of message modification in WEP due to the CRC 
 
 The security of 802.11i with respect to confidentiality and authentication has also been verified without the use of automatic verifiers.  In \cite{he05}, He and Mitchell consider each stage of the protocol and argue its security from a number of possible threats, including malicious access points, session hijacking, eavesdropping, and message deletion.  They conclude that it provides effective confidentiality and integrity when the CCMP protocol is used, and that it may provide satisfactory mutual authentication and key management.  However, they identify several possible Denial of Service attacks, since the protocol is not designed to ensure liveness.
 
-One of these Denial of Service attacks, identified in \cite{he04} and \cite{liu08}, deals with the Four-Way Handshake protocol that is responsible for establishing the Pairwise Transient Key (PTK).  Using automatic verification tools, both groups of researchers prove that it is possible to launch a Denial of Service attack on a supplicant in which the supplicant is continually forced to regenerate a new but incorrect PTK, preventing it from ever communicating with the server.  \cite{he04} solves this problem by suggesting the reuse of the supplicant's nonce until after the PTK has been established.  However, this solution is susceptible to a Denial of Service attack against CPU resources.  \cite{liu08} proposes a different solution intended to avoid this.  They suggest the addition of a large random number nonce that is sent along with traditional participant's nonce.  However, both of these nonces are encrypted with the Pairwise Master Key, which is assumed to be unknown to the attacker.  This ensures that attackers cannot flood the network with nonces in an attempt to trick the supplicant into continuously recomputing the PTK.
+One of these Denial of Service attacks, identified in \cite{he04} and \cite{liu08}, deals with the Four-Way Handshake protocol that is responsible for establishing the Pairwise Transient Key (PTK).  Using automatic verification tools, both groups of researchers prove that it is possible to launch a Denial of Service attack on a supplicant in which the supplicant is continually forced to regenerate a new but incorrect PTK, preventing it from ever communicating with the server.  \cite{he04} solves this problem by suggesting the reuse of the supplicant's nonce until after the PTK has been established.  However, this solution is susceptible to a Denial of Service attack against CPU resources.  \cite{liu08} proposes a different solution intended to avoid this.  They suggest the addition of a large random number nonce that is sent along with traditional participant's nonce.  However, both of these nonces are encrypted with the Pairwise Master Key (PMK), which is assumed to be unknown to the attacker.  This ensures that attackers cannot flood the network with nonces in an attempt to trick the supplicant into continuously recomputing the PTK.  However, the PMK is a long-lived secret.  If the attacker is able to guess the nonce, possibly after dedicating much time and computational power, he can then discover the PMK and eavesdrop or inject messages into the channel at will.  On the other hand, if an attacker is able to guess the PTK, he is only able to act maliciously for the duration of a single session.  For this reason, we consider exposing any message encrypted by the PMK to be potentially insecure.  
 
 Automatic verification has also been applied to WEP.  Lafourcade et al. found an attack similar to \cite{borisov01} described above using the ProVerif Cryptographic Verifier \cite{lafourcade10}. By placing multiple messages on the channel encrypted with the same keystream, the attacker is able to recover the contents of encrypted messages.  To prevent this attack, they then implemented a version of WEP in which all initialization vectors were guaranteed to be unique.  This protocol was considered secure by ProVerif.  Unfortunately it is impossible to ensure that initialization vectors will always be unique in the real world, which is why WEP is no longer considered to be secure.
  
@@ -294,9 +293,11 @@ The Four-Way Handshake DoS attack is mounted by sending a new nonce, distinct fr
 
 \section{Conclusions and Future Work}
 \label{sec:conclude}
-Confidentiality and authentication are two very important properties that must hold in order for an internet protocol to be considered secure.  WEP, unfortunately, was unable to provide them due to its use of the insecure RC4 cipher and the fact that initialization vectors were frequently reused.  802.11i, however, guarantees both authentication and security, and automatic correctness verifiers can find no attack that would violate either principle.
+Confidentiality and authentication are two very important properties that must hold in order for an internet protocol to be considered secure.  WEP, unfortunately, was unable to provide them due to its use of the insecure RC4 cipher and the fact that initialization vectors were frequently reused.  802.11i, however, guarantees both authentication and confidentiality, and automatic correctness verifiers can find no attack that would violate either principle.
 
-Unfortunately, it is not enough to only provide authentication and confidentiality.  Much of today's business transactions are conducted electronically, and companies cannot afford a Denial of Service attack. For this reason, 802.11i needs to be modified.  Changhua He et al. claim that their solution of nonce reuse has been adopted by the 802.11i standards committee \cite{heMitchell05}.  
+Unfortunately, it is not enough to only provide authentication and confidentiality.  Much of today's business transactions are conducted electronically, and companies cannot afford a Denial of Service attack. For this reason, 802.11i needs to be modified.  The solution of nonce reuse proposed by Changhua He et al. has been adopted by the 802.11i standards committee \cite{heMitchell05}.  This solution is simple, and requires very little modification to the protocol. 
+
+802.11i provides an efficient, secure framework for authentication between a wireless station and its access point.  However, in the presence of a malicious attacker, we saw the possibility of a denial of service attack.  Modern protocol design, and the upkeep of legacy protocols must take into account not only secrecy, integrity, and classic security principles, but also liveness.  
 \bibliographystyle{plain}
 \bibliography{wpaPaper}
 \appendix
